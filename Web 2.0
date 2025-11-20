@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Vital para móviles -->
+    <title>Guía del Huésped - Casa 3D</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        airbnb: '#FF5A5F',
+                        airbnbDark: '#E00007',
+                        glass: 'rgba(255, 255, 255, 0.7)',
+                        dark: '#222222',
+                    },
+                    boxShadow: {
+                        '3d-soft': '20px 20px 60px #d1d1d1, -20px -20px 60px #ffffff',
+                        'clay': '8px 8px 16px 0 rgba(0, 0, 0, 0.15), -8px -8px 12px 0 rgba(255, 255, 255, 1)',
+                        'clay-active': 'inset 6px 6px 12px rgba(0,0,0,0.15), inset -6px -6px 12px rgba(255,255,255,0.8)',
+                    },
+                    animation: {
+                        'modal-in': 'modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                    },
+                    keyframes: {
+                        modalIn: {
+                            '0%': { opacity: '0', transform: 'scale(0.9) translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #f3f4f6;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+            -webkit-tap-highlight-color: transparent; /* Elimina el flash azul al tocar en móviles */
+        }
+
+        .hero-bg {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 800px; z-index: -1;
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            overflow: hidden;
+        }
+
+        .blob {
+            position: absolute; filter: blur(60px); opacity: 0.6;
+            animation: float 10s infinite ease-in-out;
+            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+        }
+        .blob-1 { top: -10%; left: -10%; width: 600px; height: 600px; background: #FF9A9E; animation-delay: 0s; }
+        .blob-2 { top: 20%; right: -10%; width: 500px; height: 500px; background: #FECFEF; animation-delay: 2s; }
+        .blob-3 { bottom: -20%; left: 20%; width: 400px; height: 400px; background: #a18cd1; animation-delay: 4s; }
+
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg) scale(1); }
+            50% { transform: translateY(-40px) rotate(10deg) scale(1.05); }
+            100% { transform: translateY(0px) rotate(0deg) scale(1); }
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1); 
+        }
+
+        .category-pill {
+            background: linear-gradient(145deg, #ffffff, #e6e6e6);
+            box-shadow:  8px 8px 16px #d1d1d1, -8px -8px 16px #ffffff;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .category-pill:hover { transform: translateY(-5px) scale(1.05); z-index: 10; }
+        .category-pill.active {
+            background: #FF5A5F; color: white;
+            box-shadow: inset 3px 3px 6px #c43e42, inset -3px -3px 6px #ff767c;
+            border: 2px solid white;
+        }
+
+        .listing-card-container { perspective: 1000px; transition: all 0.5s ease; }
+        .listing-card-container.hidden-card { display: none; }
+        .listing-card-container.show-card { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.8) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .listing-card {
+            transform-style: preserve-3d; transition: transform 0.1s ease-out;
+            background: #ffffff; border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.6);
+            box-shadow: 12px 12px 24px rgba(174, 174, 192, 0.4), -12px -12px 24px #FFFFFF;
+            overflow: hidden; position: relative; cursor: pointer;
+        }
+        /* Efecto activo para móviles */
+        .listing-card:active { transform: scale(0.98); transition: transform 0.1s; }
+
+        .listing-image { transform: translateZ(20px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
+        .listing-details { transform: translateZ(30px); }
+
+        .btn-action {
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+            box-shadow: 5px 5px 10px #d1d1d1, -5px -5px 10px #ffffff;
+            color: #FF5A5F; transition: all 0.2s ease;
+            z-index: 20; position: relative;
+        }
+        .btn-action:hover {
+            background: #FF5A5F; color: white;
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="text-gray-700 antialiased selection:bg-airbnb selection:text-white">
+
+    <nav class="fixed top-0 w-full z-50 px-4 sm:px-6 py-4">
+        <div class="glass-panel max-w-7xl mx-auto rounded-full px-6 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <div class="shrink-0">
+                    <svg viewBox="0 0 32 32" class="block h-8 w-8 sm:h-10 sm:w-10 fill-current text-airbnb" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 1c2.008 0 3.463.963 4.751 3.269l.533 1.025c1.954 3.83 6.114 12.54 7.1 14.836l.145.353c.667 1.591.91 3.162.722 4.672l-.08.585c-.36 2.27-1.88 4.285-4.05 5.39l-.615.287-.64.252c-3.17.104-4.23-1.399-4.928-3.225l-.058-.16-.106-.34c-.56-1.762-1.46-1.856-2.533-1.943l-.262-.018c-1.232-.057-2.222.253-2.797 2.048l-.062.205-.05.188c-.748 2.642-2.086 3.316-4.528 3.248l-.627-.048-.575-.083c-2.33-.406-4.078-2.334-4.573-5.058l-.065-.409-.037-.47c-.133-1.917.24-3.76 1.053-5.37l.234-.44.077-.132c.986-2.292 5.164-11.026 7.11-14.847L11.786 4.27C13.075 1.964 14.53 1 16 1zm0 2c-1.235 0-2.376.755-3.364 2.523l-.442.853c-1.93 3.783-6.128 12.558-7.117 14.863l-.145.355c-.65 1.553-.92 3.05-.746 4.38l.053.365.045.248c.34 1.726 1.558 3.09 3.215 3.379l.39.055.336.029c1.402.04 2.014-.531 2.352-1.71l.072-.273.075-.23c.822-2.565 2.552-3.217 4.172-3.14l.286.018c1.603.129 3.13.58 3.943 3.137l.087.29.073.22c.385 1.072 1.052 1.52 2.23 1.48l.35-.024.364-.064c1.367-.307 2.504-1.638 2.836-3.34l.054-.323.036-.38c.104-1.04-.06-2.222-.527-3.458l-.182-.457-.116-.273c-.984-2.29-5.16-11.005-7.102-14.82L16.82 4.52C15.833 2.755 14.692 2 16 2z" fill-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <div class="flex flex-col justify-center leading-tight">
+                    <h1 class="text-sm sm:text-xl font-extrabold text-gray-900 tracking-tight">Airbnb – Guía Local Monterrey</h1>
+                    <p class="text-[10px] sm:text-xs font-medium text-airbnb truncate max-w-[200px] sm:max-w-none">Calle Siderúrgica 108, Buenos Aires, 64800 Monterrey, N.L., México</p>
+                </div>
+            </div>
+            <div class="hidden sm:flex items-center gap-4">
+                <button class="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100 hover:scale-105 transition-transform text-airbnb"><i data-lucide="help-circle" class="w-5 h-5"></i></button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="hero-bg">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <main class="pt-28 pb-20 px-4 sm:px-8 max-w-[1600px] mx-auto relative z-10">
+        <div class="flex flex-col items-center justify-center mb-12 mt-8 text-center">
+            <div class="mb-4 px-4 py-1 bg-white/60 backdrop-blur-md rounded-full border border-white shadow-sm inline-block">
+                <span class="text-xs font-bold text-airbnb tracking-wider uppercase">Guía del Huésped</span>
+            </div>
+            <h1 class="text-4xl md:text-7xl font-extrabold text-gray-800 mb-6 drop-shadow-sm leading-tight">
+                Bienvenido a <br><span class="text-transparent bg-clip-text bg-gradient-to-r from-airbnb to-orange-500">Tu Hogar Temporal.</span>
+            </h1>
+            <p class="text-lg text-gray-500 max-w-2xl mx-auto font-medium">Hemos seleccionado lo mejor de la zona para ti.</p>
+        </div>
+
+        <div class="flex flex-wrap gap-6 justify-center mb-16">
+            <div class="category-pill active group w-32 h-32 rounded-3xl flex flex-col items-center justify-center cursor-pointer gap-3" onclick="filterContent('plazas', this)">
+                <i data-lucide="layout-grid" class="w-8 h-8 transition-transform duration-300 group-hover:scale-110"></i>
+                <span class="text-sm font-bold">Ver Plazas</span>
+            </div>
+            <div class="category-pill group w-32 h-32 rounded-3xl flex flex-col items-center justify-center cursor-pointer gap-3 text-gray-500 hover:text-airbnb" onclick="filterContent('turismo', this)">
+                <i data-lucide="camera" class="w-8 h-8 transition-transform duration-300 group-hover:scale-110"></i>
+                <span class="text-sm font-bold text-center leading-tight px-2">Lugares<br>Turísticos</span>
+            </div>
+            <div class="category-pill group w-32 h-32 rounded-3xl flex flex-col items-center justify-center cursor-pointer gap-3 text-gray-500 hover:text-airbnb" onclick="filterContent('transporte', this)">
+                <i data-lucide="bus" class="w-8 h-8 transition-transform duration-300 group-hover:scale-110"></i>
+                <span class="text-sm font-bold">Transporte</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8" id="content-grid">
+            
+            <!-- === PLAZAS === -->
+            <!-- Nuevo Sur -->
+            <div class="listing-card-container show-card active:scale-95 transition-transform duration-200" data-category="plazas" onclick="openModal('modal-nuevosur')">
+                <div class="listing-card h-[450px] w-full rounded-3xl p-4 flex flex-col justify-between cursor-pointer group hover:border-airbnb/50 transition-colors">
+                    <div class="relative h-[60%] w-full rounded-2xl overflow-hidden listing-image">
+                        <img src="https://media.licdn.com/dms/image/v2/D5622AQFwRL9l-r3jFQ/feedshare-shrink_800/feedshare-shrink_800/0/1706299744134?e=2147483647&v=beta&t=IpSrfrWr1g2d924R3e_vQvPeCBIBPymsEOqIIL2Htl0" alt="Nuevo Sur" class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700">
+                        <div class="absolute top-3 left-3 flex flex-col gap-2 items-start">
+                             <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50">
+                                <span class="text-xs font-bold text-airbnb flex items-center gap-1"><i data-lucide="car" class="w-3 h-3"></i> ~5-10 min</span>
+                            </div>
+                            <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50">
+                                <span class="text-xs font-bold text-gray-500 flex items-center gap-1"><i data-lucide="footprints" class="w-3 h-3"></i> ~30 min</span>
+                            </div>
+                        </div>
+                        <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <span class="bg-white/90 backdrop-blur text-xs font-bold px-4 py-2 rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all">Ver Detalles</span>
+                        </div>
+                    </div>
+                    <div class="listing-details mt-4 flex flex-col gap-2 h-[40%] justify-between">
+                        <div>
+                            <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2"><img src="https://upload.wikimedia.org/wikipedia/commons/6/69/Airbnb_Logo_B%C3%A9lo.svg" class="h-6 w-auto" alt="Airbnb"> Nuevo Sur</h3>
+                            <p class="text-gray-500 text-sm mt-1">Centro comercial moderno al aire libre.</p>
+                        </div>
+                        <a href="https://www.google.com/maps/dir/?api=1&origin=Calle+Siderurgica+108+Buenos+Aires+Monterrey&destination=Nuevo+Sur+Centro+Comercial+Monterrey" target="_blank" onclick="event.stopPropagation()" class="btn-action flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ver Ruta</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Plaza Revolución 3000 -->
+            <div class="listing-card-container show-card active:scale-95 transition-transform duration-200" data-category="plazas" onclick="openModal('modal-revolucion')">
+                <div class="listing-card h-[450px] w-full rounded-3xl p-4 flex flex-col justify-between cursor-pointer group hover:border-airbnb/50 transition-colors">
+                    <div class="relative h-[60%] w-full rounded-2xl overflow-hidden listing-image">
+                        <img src="https://static.wixstatic.com/media/ffe59a_cb32154ba9dd4c5695acf26aa20c333a~mv2.jpg/v1/crop/x_113,y_430,w_1827,h_1101/fill/w_949,h_572,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/ffe59a_cb32154ba9dd4c5695acf26aa20c333a~mv2.jpg" alt="Plaza Revolución" class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700">
+                        <div class="absolute top-3 left-3 flex flex-col gap-2 items-start">
+                            <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50">
+                                <span class="text-xs font-bold text-green-600 flex items-center gap-1"><i data-lucide="car" class="w-3 h-3"></i> ~3 min</span>
+                            </div>
+                             <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50">
+                                <span class="text-xs font-bold text-gray-500 flex items-center gap-1"><i data-lucide="footprints" class="w-3 h-3"></i> ~10 min</span>
+                            </div>
+                        </div>
+                        <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <span class="bg-white/90 backdrop-blur text-xs font-bold px-4 py-2 rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all">Ver Detalles</span>
+                        </div>
+                    </div>
+                    <div class="listing-details mt-4 flex flex-col gap-2 h-[40%] justify-between">
+                        <div>
+                            <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2"><img src="https://upload.wikimedia.org/wikipedia/commons/6/69/Airbnb_Logo_B%C3%A9lo.svg" class="h-6 w-auto" alt="Airbnb"> Plaza Revolución 3000</h3>
+                            <p class="text-gray-500 text-sm mt-1">Complejo de oficinas y comercios cercano.</p>
+                        </div>
+                        <a href="https://maps.app.goo.gl/bMfBT8gmD2v5HWF16" target="_blank" onclick="event.stopPropagation()" class="btn-action flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ver Ruta</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Plaza Santa Fe -->
+            <div class="listing-card-container show-card active:scale-95 transition-transform duration-200" data-category="plazas" onclick="openModal('modal-santafe')">
+                <div class="listing-card h-[450px] w-full rounded-3xl p-4 flex flex-col justify-between cursor-pointer group hover:border-airbnb/50 transition-colors">
+                    <div class="relative h-[60%] w-full rounded-2xl overflow-hidden listing-image">
+                        <img src="https://assets.easybroker.com/property_images/2985373/47528578/EB-KL5373.jpg?version=1653080201" alt="Plaza Santa Fe" class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700">
+                        <div class="absolute top-3 left-3 flex flex-col gap-2 items-start">
+                            <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50">
+                                <span class="text-xs font-bold text-blue-500 flex items-center gap-1"><i data-lucide="car" class="w-3 h-3"></i> ~3-5 min</span>
+                            </div>
+                             <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50">
+                                <span class="text-xs font-bold text-gray-500 flex items-center gap-1"><i data-lucide="footprints" class="w-3 h-3"></i> ~5-10 min</span>
+                            </div>
+                        </div>
+                        <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <span class="bg-white/90 backdrop-blur text-xs font-bold px-4 py-2 rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all">Ver Detalles</span>
+                        </div>
+                    </div>
+                    <div class="listing-details mt-4 flex flex-col gap-2 h-[40%] justify-between">
+                        <div>
+                            <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2"><img src="https://upload.wikimedia.org/wikipedia/commons/6/69/Airbnb_Logo_B%C3%A9lo.svg" class="h-6 w-auto" alt="Airbnb"> Plaza Santa Fe</h3>
+                            <p class="text-gray-500 text-sm mt-1">Plaza comercial en la zona este.</p>
+                        </div>
+                        <a href="https://www.google.com/maps/dir/?api=1&origin=Calle+Siderurgica+108+Buenos+Aires+Monterrey&destination=Plaza+Santa+Fe+Nuevo+Leon" target="_blank" onclick="event.stopPropagation()" class="btn-action flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ver Ruta</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- === TURISMO === -->
+            <!-- Estadio BBVA -->
+            <div class="listing-card-container hidden-card active:scale-95 transition-transform duration-200" data-category="turismo" onclick="openModal('modal-bbva')">
+                <div class="listing-card h-[450px] w-full rounded-3xl p-4 flex flex-col justify-between cursor-pointer group hover:border-airbnb/50 transition-colors">
+                    <div class="relative h-[60%] w-full rounded-2xl overflow-hidden listing-image">
+                        <img src="https://www.materialesjerez.com.mx/wp-content/uploads/2018/06/Estadio-BBVA-costrurama-materiales.jpg" alt="Estadio BBVA" class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700">
+                        <div class="absolute top-3 right-3 bg-blue-900 text-white px-3 py-1 rounded-lg shadow-md"><span class="text-xs font-bold">Rayados</span></div>
+                        <div class="absolute top-3 left-3 flex flex-col gap-2 items-start">
+                            <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50"><span class="text-xs font-bold text-airbnb flex items-center gap-1"><i data-lucide="car" class="w-3 h-3"></i> ~10-20 min</span></div>
+                            <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50"><span class="text-xs font-bold text-gray-500 flex items-center gap-1"><i data-lucide="footprints" class="w-3 h-3"></i> ~1h 20m</span></div>
+                        </div>
+                        <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <span class="bg-white/90 backdrop-blur text-xs font-bold px-4 py-2 rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all">Ver Detalles</span>
+                        </div>
+                    </div>
+                    <div class="listing-details mt-4 flex flex-col gap-2 h-[40%] justify-between">
+                        <div>
+                            <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2"><img src="https://upload.wikimedia.org/wikipedia/commons/6/69/Airbnb_Logo_B%C3%A9lo.svg" class="h-6 w-auto" alt="Airbnb"> Estadio BBVA</h3>
+                            <p class="text-gray-500 text-sm mt-1">El "Gigante de Acero", sede de Rayados.</p>
+                        </div>
+                        <a href="https://www.google.com/maps/search/?api=1&query=Estadio+BBVA+Monterrey" target="_blank" onclick="event.stopPropagation()" class="btn-action flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ver Ubicación</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadio Banorte -->
+            <div class="listing-card-container hidden-card active:scale-95 transition-transform duration-200" data-category="turismo" onclick="openModal('modal-banorte')">
+                <div class="listing-card h-[450px] w-full rounded-3xl p-4 flex flex-col justify-between cursor-pointer group hover:border-airbnb/50 transition-colors">
+                    <div class="relative h-[60%] w-full rounded-2xl overflow-hidden listing-image">
+                        <img src="https://distritotec.tec.mx/sites/g/files/vgjovo1626/files/inline-images/dtec-cbd-07_52565656227_o_0.jpg" alt="Estadio Banorte" class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700">
+                         <div class="absolute top-3 left-3 flex flex-col gap-2 items-start">
+                            <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50"><span class="text-xs font-bold text-airbnb flex items-center gap-1"><i data-lucide="car" class="w-3 h-3"></i> ~5-8 min</span></div>
+                            <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50"><span class="text-xs font-bold text-gray-500 flex items-center gap-1"><i data-lucide="footprints" class="w-3 h-3"></i> ~40 min</span></div>
+                         </div>
+                         <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <span class="bg-white/90 backdrop-blur text-xs font-bold px-4 py-2 rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all">Ver Detalles</span>
+                        </div>
+                    </div>
+                    <div class="listing-details mt-4 flex flex-col gap-2 h-[40%] justify-between">
+                        <div>
+                            <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2"><img src="https://upload.wikimedia.org/wikipedia/commons/6/69/Airbnb_Logo_B%C3%A9lo.svg" class="h-6 w-auto" alt="Airbnb"> Estadio Banorte</h3>
+                            <p class="text-gray-500 text-sm mt-1">Casa de los Borregos del Tec.</p>
+                        </div>
+                        <a href="https://www.google.com/maps/search/?api=1&query=Estadio+Banorte+Monterrey" target="_blank" onclick="event.stopPropagation()" class="btn-action flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ver Ubicación</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Barrio Antiguo -->
+            <div class="listing-card-container hidden-card active:scale-95 transition-transform duration-200" data-category="turismo" onclick="openModal('modal-barrio')">
+                <div class="listing-card h-[450px] w-full rounded-3xl p-4 flex flex-col justify-between cursor-pointer group hover:border-airbnb/50 transition-colors">
+                    <div class="relative h-[60%] w-full rounded-2xl overflow-hidden listing-image">
+                        <img src="https://www.mexicodesconocido.com.mx/wp-content/uploads/2023/01/DSC_9633-700x541-1.jpeg" alt="Barrio Antiguo" class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700">
+                        <div class="absolute top-3 right-3 bg-orange-500 text-white px-3 py-1 rounded-lg shadow-md"><span class="text-xs font-bold">Cultural</span></div>
+                         <div class="absolute top-3 left-3 flex flex-col gap-2 items-start">
+                            <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50"><span class="text-xs font-bold text-airbnb flex items-center gap-1"><i data-lucide="car" class="w-3 h-3"></i> ~10-15 min</span></div>
+                            <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50"><span class="text-xs font-bold text-gray-500 flex items-center gap-1"><i data-lucide="footprints" class="w-3 h-3"></i> ~50-60 min</span></div>
+                         </div>
+                         <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <span class="bg-white/90 backdrop-blur text-xs font-bold px-4 py-2 rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all">Ver Detalles</span>
+                        </div>
+                    </div>
+                    <div class="listing-details mt-4 flex flex-col gap-2 h-[40%] justify-between">
+                        <div>
+                            <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2"><img src="https://upload.wikimedia.org/wikipedia/commons/6/69/Airbnb_Logo_B%C3%A9lo.svg" class="h-6 w-auto" alt="Airbnb"> Barrio Antiguo</h3>
+                            <p class="text-gray-500 text-sm mt-1">Historia, cafés y vida nocturna.</p>
+                        </div>
+                        <a href="https://www.google.com/maps/search/?api=1&query=Barrio+Antiguo+Monterrey" target="_blank" onclick="event.stopPropagation()" class="btn-action flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ver Ubicación</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paseo Santa Lucía -->
+            <div class="listing-card-container hidden-card active:scale-95 transition-transform duration-200" data-category="turismo" onclick="openModal('modal-lucia')">
+                <div class="listing-card h-[450px] w-full rounded-3xl p-4 flex flex-col justify-between cursor-pointer group hover:border-airbnb/50 transition-colors">
+                    <div class="relative h-[60%] w-full rounded-2xl overflow-hidden listing-image">
+                        <img src="https://www.turimexico.com/wp-content/uploads/2015/06/paseo-santa-lucia.jpg" alt="Paseo Santa Lucía" class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700">
+                         <div class="absolute top-3 left-3 flex flex-col gap-2 items-start">
+                            <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50"><span class="text-xs font-bold text-airbnb flex items-center gap-1"><i data-lucide="car" class="w-3 h-3"></i> ~10 min</span></div>
+                            <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50"><span class="text-xs font-bold text-gray-500 flex items-center gap-1"><i data-lucide="footprints" class="w-3 h-3"></i> ~40-50 min</span></div>
+                         </div>
+                         <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <span class="bg-white/90 backdrop-blur text-xs font-bold px-4 py-2 rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all">Ver Detalles</span>
+                        </div>
+                    </div>
+                    <div class="listing-details mt-4 flex flex-col gap-2 h-[40%] justify-between">
+                        <div>
+                            <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2"><img src="https://upload.wikimedia.org/wikipedia/commons/6/69/Airbnb_Logo_B%C3%A9lo.svg" class="h-6 w-auto" alt="Airbnb"> Paseo Santa Lucía</h3>
+                            <p class="text-gray-500 text-sm mt-1">Río artificial navegable.</p>
+                        </div>
+                        <a href="https://www.google.com/maps/search/?api=1&query=Paseo+Santa+Lucia+Monterrey" target="_blank" onclick="event.stopPropagation()" class="btn-action flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ver Ubicación</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parque Fundidora -->
+            <div class="listing-card-container hidden-card active:scale-95 transition-transform duration-200" data-category="turismo" onclick="openModal('modal-fundidora')">
+                <div class="listing-card h-[450px] w-full rounded-3xl p-4 flex flex-col justify-between cursor-pointer group hover:border-airbnb/50 transition-colors">
+                    <div class="relative h-[60%] w-full rounded-2xl overflow-hidden listing-image">
+                        <img src="https://i.elhorizonte.mx/img/eh/2890000/2892356_fundidoraok2.jpg" alt="Parque Fundidora" class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700">
+                        <div class="absolute top-3 right-3 bg-green-600 text-white px-3 py-1 rounded-lg shadow-md"><span class="text-xs font-bold">Icono</span></div>
+                         <div class="absolute top-3 left-3 flex flex-col gap-2 items-start">
+                            <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50"><span class="text-xs font-bold text-airbnb flex items-center gap-1"><i data-lucide="car" class="w-3 h-3"></i> ~10 min</span></div>
+                            <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50"><span class="text-xs font-bold text-gray-500 flex items-center gap-1"><i data-lucide="footprints" class="w-3 h-3"></i> ~20-25 min</span></div>
+                         </div>
+                         <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <span class="bg-white/90 backdrop-blur text-xs font-bold px-4 py-2 rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all">Ver Detalles</span>
+                        </div>
+                    </div>
+                    <div class="listing-details mt-4 flex flex-col gap-2 h-[40%] justify-between">
+                        <div>
+                            <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2"><img src="https://upload.wikimedia.org/wikipedia/commons/6/69/Airbnb_Logo_B%C3%A9lo.svg" class="h-6 w-auto" alt="Airbnb"> Parque Fundidora</h3>
+                            <p class="text-gray-500 text-sm mt-1">Parque industrial, museos y eventos.</p>
+                        </div>
+                        <a href="https://www.google.com/maps/search/?api=1&query=Parque+Fundidora+Monterrey" target="_blank" onclick="event.stopPropagation()" class="btn-action flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ver Ubicación</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parque España -->
+            <div class="listing-card-container hidden-card active:scale-95 transition-transform duration-200" data-category="turismo" onclick="openModal('modal-espana')">
+                <div class="listing-card h-[450px] w-full rounded-3xl p-4 flex flex-col justify-between cursor-pointer group hover:border-airbnb/50 transition-colors">
+                    <div class="relative h-[60%] w-full rounded-2xl overflow-hidden listing-image">
+                        <img src="https://iphonegr.elnorte.com/libre/online07/imagetransformer2/ImageTransformer.aspx?img=https://img.gruporeforma.com/imagenes/960x640/6/546/5545370.jpg&imagencompleta=1" alt="Parque España" class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700">
+                         <div class="absolute top-3 left-3 flex flex-col gap-2 items-start">
+                            <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50"><span class="text-xs font-bold text-airbnb flex items-center gap-1"><i data-lucide="car" class="w-3 h-3"></i> ~10-12 min</span></div>
+                            <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50"><span class="text-xs font-bold text-gray-500 flex items-center gap-1"><i data-lucide="footprints" class="w-3 h-3"></i> ~12 min</span></div>
+                         </div>
+                         <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <span class="bg-white/90 backdrop-blur text-xs font-bold px-4 py-2 rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all">Ver Detalles</span>
+                        </div>
+                    </div>
+                    <div class="listing-details mt-4 flex flex-col gap-2 h-[40%] justify-between">
+                        <div>
+                            <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2"><img src="https://upload.wikimedia.org/wikipedia/commons/6/69/Airbnb_Logo_B%C3%A9lo.svg" class="h-6 w-auto" alt="Airbnb"> Parque España</h3>
+                            <p class="text-gray-500 text-sm mt-1">Conectado por el Puente Verde.</p>
+                        </div>
+                        <a href="https://www.google.com/maps/search/?api=1&query=Parque+España+Monterrey" target="_blank" onclick="event.stopPropagation()" class="btn-action flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ver Ubicación</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Río La Silla -->
+            <div class="listing-card-container hidden-card active:scale-95 transition-transform duration-200" data-category="turismo" onclick="openModal('modal-riosilla')">
+                <div class="listing-card h-[450px] w-full rounded-3xl p-4 flex flex-col justify-between cursor-pointer group hover:border-airbnb/50 transition-colors">
+                    <div class="relative h-[60%] w-full rounded-2xl overflow-hidden listing-image">
+                        <img src="https://www.nomada.news/wp-content/uploads/2019/11/rio-la-silla-monterrey-guadalupe.jpg" alt="Río La Silla" class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700">
+                         <div class="absolute top-3 left-3 flex flex-col gap-2 items-start">
+                            <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50"><span class="text-xs font-bold text-airbnb flex items-center gap-1"><i data-lucide="car" class="w-3 h-3"></i> ~12 min</span></div>
+                            <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50"><span class="text-xs font-bold text-gray-500 flex items-center gap-1"><i data-lucide="footprints" class="w-3 h-3"></i> ~20-25 min</span></div>
+                         </div>
+                         <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <span class="bg-white/90 backdrop-blur text-xs font-bold px-4 py-2 rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all">Ver Detalles</span>
+                        </div>
+                    </div>
+                    <div class="listing-details mt-4 flex flex-col gap-2 h-[40%] justify-between">
+                        <div>
+                            <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2"><img src="https://upload.wikimedia.org/wikipedia/commons/6/69/Airbnb_Logo_B%C3%A9lo.svg" class="h-6 w-auto" alt="Airbnb"> Río La Silla</h3>
+                            <p class="text-gray-500 text-sm mt-1">El único río vivo de la ciudad. Naturaleza.</p>
+                        </div>
+                        <a href="https://www.google.com/maps/search/?api=1&query=Gran+Parque+Rio+La+Silla" target="_blank" onclick="event.stopPropagation()" class="btn-action flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ver Ubicación</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parque La Pastora -->
+            <div class="listing-card-container hidden-card active:scale-95 transition-transform duration-200" data-category="turismo" onclick="openModal('modal-pastora')">
+                <div class="listing-card h-[450px] w-full rounded-3xl p-4 flex flex-col justify-between cursor-pointer group hover:border-airbnb/50 transition-colors">
+                    <div class="relative h-[60%] w-full rounded-2xl overflow-hidden listing-image">
+                        <img src="https://ladesa.com/wp-content/uploads/2022/11/lpl08.jpg" alt="Parque La Pastora" class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700">
+                         <div class="absolute top-3 left-3 flex flex-col gap-2 items-start">
+                            <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50"><span class="text-xs font-bold text-airbnb flex items-center gap-1"><i data-lucide="car" class="w-3 h-3"></i> ~10-15 min</span></div>
+                            <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50"><span class="text-xs font-bold text-gray-500 flex items-center gap-1"><i data-lucide="footprints" class="w-3 h-3"></i> ~1h 20-1h 30m</span></div>
+                         </div>
+                         <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <span class="bg-white/90 backdrop-blur text-xs font-bold px-4 py-2 rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all">Ver Detalles</span>
+                        </div>
+                    </div>
+                    <div class="listing-details mt-4 flex flex-col gap-2 h-[40%] justify-between">
+                        <div>
+                            <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2"><img src="https://upload.wikimedia.org/wikipedia/commons/6/69/Airbnb_Logo_B%C3%A9lo.svg" class="h-6 w-auto" alt="Airbnb"> Parque La Pastora</h3>
+                            <p class="text-gray-500 text-sm mt-1">Zoológico y parque boscoso.</p>
+                        </div>
+                        <a href="https://www.google.com/maps/search/?api=1&query=Parque+La+Pastora+Monterrey" target="_blank" onclick="event.stopPropagation()" class="btn-action flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ver Ubicación</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- === TRANSPORTE === -->
+            
+            <!-- Central de Autobuses -->
+            <div class="listing-card-container hidden-card active:scale-95 transition-transform duration-200" data-category="transporte" onclick="openModal('modal-central')">
+                <div class="listing-card h-[450px] w-full rounded-3xl p-4 flex flex-col justify-between cursor-pointer group hover:border-airbnb/50 transition-colors">
+                    <div class="relative h-[60%] w-full rounded-2xl overflow-hidden listing-image">
+                        <img src="https://www.rdlparquitectos.com/media/1838/_tab3573.jpg" alt="Central de Autobuses" class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700">
+                        <div class="absolute top-3 left-3 flex flex-col gap-2 items-start">
+                            <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50">
+                                <span class="text-xs font-bold text-airbnb flex items-center gap-1"><i data-lucide="car" class="w-3 h-3"></i> ~20-25 min</span>
+                            </div>
+                            <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50">
+                                <span class="text-xs font-bold text-gray-500 flex items-center gap-1"><i data-lucide="footprints" class="w-3 h-3"></i> ~1h 25 - 1h 30 min</span>
+                            </div>
+                        </div>
+                        <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <span class="bg-white/90 backdrop-blur text-xs font-bold px-4 py-2 rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all">Ver Detalles</span>
+                        </div>
+                    </div>
+                    <div class="listing-details mt-4 flex flex-col gap-2 h-[40%] justify-between">
+                        <div>
+                            <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2"><img src="https://upload.wikimedia.org/wikipedia/commons/6/69/Airbnb_Logo_B%C3%A9lo.svg" class="h-6 w-auto" alt="Airbnb"> Central de Autobuses</h3>
+                            <p class="text-gray-500 text-sm mt-1">Terminal para viajes foráneos.</p>
+                        </div>
+                        <a href="https://www.google.com/maps/dir/Siderúrgica+108/CENTRAL+DE+AUTOBUSES,+MONTERREY,NL.,+Avenida+Cristóbal+Colón,+Centro,+Monterrey,+Nuevo+León/@25.6864343,-100.3184137,15z/data=!4m14!4m13!1m5!1m1!1s0x8662bfe5aec0b3f1:0x4fbf285c0b992017!2m2!1d-100.2744458!2d25.6686299!1m5!1m1!1s0x86629551bc2db5a9:0xf7366d48f2d88253!2m2!1d-100.3197891!2d25.6868329!3e0?entry=ttu&g_ep=EgoyMDI1MTExNy4wIKXMDSoASAFQAw%3D%3D" target="_blank" onclick="event.stopPropagation()" class="btn-action flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ver Ubicación</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ruta Express Aeropuerto -->
+            <div class="listing-card-container hidden-card active:scale-95 transition-transform duration-200" data-category="transporte" onclick="openModal('modal-aeropuerto')">
+                <div class="listing-card h-[450px] w-full rounded-3xl p-4 flex flex-col justify-between cursor-pointer group hover:border-airbnb/50 transition-colors">
+                    <div class="relative h-[60%] w-full rounded-2xl overflow-hidden listing-image">
+                        <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=1600&auto=format&fit=crop" alt="Ruta Express" class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700">
+                        <div class="absolute top-3 right-3 bg-purple-600 text-white px-3 py-1 rounded-lg shadow-md"><span class="text-xs font-bold">Económico</span></div>
+                        <div class="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md border border-white/50"><span class="text-xs font-bold text-airbnb flex items-center gap-1"><i data-lucide="car" class="w-3 h-3"></i> ~10-15 min (a Y Griega)</span></div>
+                        <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <span class="bg-white/90 backdrop-blur text-xs font-bold px-4 py-2 rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all">Ver Detalles</span>
+                        </div>
+                    </div>
+                    <div class="listing-details mt-4 flex flex-col gap-2 h-[40%] justify-between">
+                        <div>
+                            <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2"><img src="https://upload.wikimedia.org/wikipedia/commons/6/69/Airbnb_Logo_B%C3%A9lo.svg" class="h-6 w-auto" alt="Airbnb"> Bus Aeropuerto</h3>
+                            <p class="text-gray-500 text-sm mt-1">Opción económica directo al aeropuerto.</p>
+                        </div>
+                        <a href="https://www.google.com/maps/dir/?api=1&origin=Calle+Siderurgica+108+Buenos+Aires+Monterrey&destination=Estacion+Y+Griega+Monterrey" target="_blank" onclick="event.stopPropagation()" class="btn-action flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ruta a Estación</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Taxis y Apps -->
+            <div class="listing-card-container hidden-card active:scale-95 transition-transform duration-200" data-category="transporte">
+                <div class="listing-card h-[450px] w-full rounded-3xl p-4 flex flex-col justify-between cursor-pointer group hover:border-airbnb/50 transition-colors">
+                    <div class="relative h-[60%] w-full rounded-2xl overflow-hidden listing-image bg-gray-100 flex items-center justify-center">
+                         <div class="w-32 h-32 bg-gray-800 rounded-2xl shadow-2xl flex items-center justify-center transform rotate-[10deg] group-hover:scale-110 transition-transform duration-500">
+                            <i data-lucide="car-taxi-front" class="w-16 h-16 text-white"></i>
+                       </div>
+                    </div>
+                    <div class="listing-details mt-4 flex flex-col gap-2 h-[40%] justify-between">
+                        <div>
+                            <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2"><img src="https://upload.wikimedia.org/wikipedia/commons/6/69/Airbnb_Logo_B%C3%A9lo.svg" class="h-6 w-auto" alt="Airbnb"> Taxis y Apps</h3>
+                            <p class="text-gray-500 text-sm mt-1">Uber y Didi funcionan 24/7.</p>
+                        </div>
+                        <!-- Botones funcionales para Uber y DiDi -->
+                        <div class="flex gap-3">
+                            <a href="https://m.uber.com/ul" target="_blank" class="flex-1 btn-action flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm hover:bg-black hover:text-white transition-colors">
+                                <i data-lucide="smartphone" class="w-4 h-4"></i> Uber
+                            </a>
+                            <a href="https://web.didiglobal.com/mx/pasajero/" target="_blank" class="flex-1 btn-action flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm text-orange-600 hover:bg-orange-500 hover:text-white transition-colors">
+                                <i data-lucide="car" class="w-4 h-4"></i> DiDi
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- === MODALES === -->
+
+    <div id="modal-nuevosur" class="fixed inset-0 z-[60] hidden flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="closeModal('modal-nuevosur')"></div>
+        <div class="glass-panel w-full max-w-2xl max-h-[85vh] rounded-3xl relative flex flex-col overflow-hidden shadow-2xl animate-modal-in">
+            <div class="h-48 w-full relative shrink-0">
+                <img src="https://media.licdn.com/dms/image/v2/D5622AQFwRL9l-r3jFQ/feedshare-shrink_800/feedshare-shrink_800/0/1706299744134?e=2147483647&v=beta&t=IpSrfrWr1g2d924R3e_vQvPeCBIBPymsEOqIIL2Htl0" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6"><h2 class="text-3xl text-white font-extrabold drop-shadow-md">Nuevo Sur</h2></div>
+                <button onclick="closeModal('modal-nuevosur')" class="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur p-2 rounded-full text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scroll bg-white/80 backdrop-blur-xl flex-1">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
+                    <a href="https://nuevosurcentrocomercial.com/" target="_blank" class="flex items-center justify-center gap-2 bg-white border border-gray-200 p-3 rounded-xl font-bold text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors shadow-sm"><i data-lucide="globe" class="w-4 h-4 text-airbnb"></i> Sitio Web</a>
+                    <a href="https://www.facebook.com/NuevoSurCC/?locale=es_LA" target="_blank" class="flex items-center justify-center gap-2 bg-blue-50 border border-blue-100 p-3 rounded-xl font-bold text-sm text-blue-700 hover:bg-blue-100 transition-colors shadow-sm"><i data-lucide="facebook" class="w-4 h-4"></i> Facebook</a>
+                    <a href="https://www.google.com/maps/dir/?api=1&origin=Calle+Siderurgica+108+Buenos+Aires+Monterrey&destination=Nuevo+Sur+Centro+Comercial+Monterrey" target="_blank" class="flex items-center justify-center gap-2 bg-green-50 border border-green-100 p-3 rounded-xl font-bold text-sm text-green-700 hover:bg-green-100 transition-colors shadow-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ver Ruta</a>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div class="bg-white/50 p-4 rounded-2xl border border-white shadow-sm">
+                        <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3">Comer & Beber</h4>
+                        <ul class="space-y-2">
+                            <li class="flex items-center gap-3 text-gray-700"><div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 shrink-0"><i data-lucide="utensils" class="w-4 h-4"></i></div><span class="font-medium">Olive Garden</span></li>
+                            <li class="flex items-center gap-3 text-gray-700"><div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center text-red-500 shrink-0"><i data-lucide="flame" class="w-4 h-4"></i></div><span class="font-medium">Chili's</span></li>
+                            <li class="flex items-center gap-3 text-gray-700"><div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-700 shrink-0"><i data-lucide="coffee" class="w-4 h-4"></i></div><span class="font-medium">Starbucks</span></li>
+                        </ul>
+                    </div>
+                     <div class="bg-white/50 p-4 rounded-2xl border border-white shadow-sm">
+                        <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3">Servicios</h4>
+                        <ul class="space-y-2">
+                            <li class="flex items-center gap-3 text-gray-700"><div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-800 shrink-0"><i data-lucide="shopping-cart" class="w-4 h-4"></i></div><span class="font-medium">Walmart Super</span></li>
+                             <li class="flex items-center gap-3 text-gray-700"><div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 shrink-0"><i data-lucide="footprints" class="w-4 h-4"></i></div><span class="font-medium">Flexi</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-revolucion" class="fixed inset-0 z-[60] hidden flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="closeModal('modal-revolucion')"></div>
+        <div class="glass-panel w-full max-w-2xl max-h-[85vh] rounded-3xl relative flex flex-col overflow-hidden shadow-2xl animate-modal-in">
+            <div class="h-48 w-full relative shrink-0">
+                <img src="https://static.wixstatic.com/media/ffe59a_cb32154ba9dd4c5695acf26aa20c333a~mv2.jpg/v1/crop/x_113,y_430,w_1827,h_1101/fill/w_949,h_572,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/ffe59a_cb32154ba9dd4c5695acf26aa20c333a~mv2.jpg" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6"><h2 class="text-3xl text-white font-extrabold drop-shadow-md">Plaza Revolución</h2></div>
+                <button onclick="closeModal('modal-revolucion')" class="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur p-2 rounded-full text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scroll bg-white/80 backdrop-blur-xl flex-1">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+                    <a href="https://www.plazarevolucion300.com/" target="_blank" class="flex items-center justify-center gap-2 bg-white border border-gray-200 p-3 rounded-xl font-bold text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors shadow-sm"><i data-lucide="globe" class="w-4 h-4 text-airbnb"></i> Sitio Web</a>
+                    <a href="https://maps.app.goo.gl/bMfBT8gmD2v5HWF16" target="_blank" class="flex items-center justify-center gap-2 bg-green-50 border border-green-100 p-3 rounded-xl font-bold text-sm text-green-700 hover:bg-green-100 transition-colors shadow-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ver Ruta</a>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div class="bg-white/50 p-4 rounded-2xl border border-white shadow-sm"><ul class="space-y-2"><li class="flex items-center gap-3 text-gray-700"><div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-600 shrink-0"><i data-lucide="coffee" class="w-4 h-4"></i></div><span class="font-medium">Tim Hortons</span></li></ul></div>
+                    <div class="bg-white/50 p-4 rounded-2xl border border-white shadow-sm"><ul class="space-y-2"><li class="flex items-center gap-3 text-gray-700"><div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 shrink-0"><i data-lucide="landmark" class="w-4 h-4"></i></div><span class="font-medium">BBVA Bancomer</span></li></ul></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-santafe" class="fixed inset-0 z-[60] hidden flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="closeModal('modal-santafe')"></div>
+        <div class="glass-panel w-full max-w-2xl max-h-[85vh] rounded-3xl relative flex flex-col overflow-hidden shadow-2xl animate-modal-in">
+            <div class="h-48 w-full relative shrink-0">
+                <img src="https://assets.easybroker.com/property_images/2985373/47528578/EB-KL5373.jpg?version=1653080201" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6"><h2 class="text-3xl text-white font-extrabold drop-shadow-md">Plaza Santa Fe</h2></div>
+                <button onclick="closeModal('modal-santafe')" class="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur p-2 rounded-full text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scroll bg-white/80 backdrop-blur-xl flex-1">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+                    <a href="https://www.google.com/search?q=Plaza+Santa+Fe+Monterrey" target="_blank" class="flex items-center justify-center gap-2 bg-white border border-gray-200 p-3 rounded-xl font-bold text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors shadow-sm"><i data-lucide="search" class="w-4 h-4 text-airbnb"></i> Buscar Web</a>
+                    <a href="https://www.google.com/maps/dir/?api=1&origin=Calle+Siderurgica+108+Buenos+Aires+Monterrey&destination=Plaza+Santa+Fe+Nuevo+Leon" target="_blank" class="flex items-center justify-center gap-2 bg-green-50 border border-green-100 p-3 rounded-xl font-bold text-sm text-green-700 hover:bg-green-100 transition-colors shadow-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ver Ruta</a>
+                </div>
+                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div class="bg-white/50 p-4 rounded-2xl border border-white shadow-sm"><ul class="space-y-2"><li class="flex items-center gap-3 text-gray-700"><div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 shrink-0"><i data-lucide="utensils" class="w-4 h-4"></i></div><span class="font-medium">Las Diligencias</span></li><li class="flex items-center gap-3 text-gray-700"><div class="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center text-pink-500 shrink-0"><i data-lucide="cake-slice" class="w-4 h-4"></i></div><span class="font-medium">Pastelería Caty</span></li></ul></div>
+                    <div class="bg-white/50 p-4 rounded-2xl border border-white shadow-sm"><ul class="space-y-2"><li class="flex items-center gap-3 text-gray-700"><div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 shrink-0"><i data-lucide="pill" class="w-4 h-4"></i></div><span class="font-medium">Farmacia</span></li></ul></div>
+                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-bbva" class="fixed inset-0 z-[60] hidden flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="closeModal('modal-bbva')"></div>
+        <div class="glass-panel w-full max-w-2xl max-h-[85vh] rounded-3xl relative flex flex-col overflow-hidden shadow-2xl animate-modal-in">
+            <div class="h-48 w-full relative shrink-0">
+                <img src="https://www.materialesjerez.com.mx/wp-content/uploads/2018/06/Estadio-BBVA-costrurama-materiales.jpg" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6"><h2 class="text-3xl text-white font-extrabold drop-shadow-md">Estadio BBVA</h2></div>
+                <button onclick="closeModal('modal-bbva')" class="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur p-2 rounded-full text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scroll bg-white/80 backdrop-blur-xl flex-1">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+                    <a href="https://www.rayados.com/" target="_blank" class="flex items-center justify-center gap-2 bg-white border border-gray-200 p-3 rounded-xl font-bold text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors shadow-sm"><i data-lucide="globe" class="w-4 h-4 text-airbnb"></i> Sitio Oficial</a>
+                    <a href="https://www.google.com/maps/search/?api=1&query=Estadio+BBVA+Monterrey" target="_blank" class="flex items-center justify-center gap-2 bg-green-50 border border-green-100 p-3 rounded-xl font-bold text-sm text-green-700 hover:bg-green-100 transition-colors shadow-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ver Ruta</a>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="star" class="w-5 h-5 text-airbnb"></i> Qué hacer aquí</h3>
+                <ul class="space-y-3">
+                    <li class="flex items-center gap-3 bg-white/50 p-3 rounded-xl border border-white"><div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 shrink-0"><i data-lucide="trophy" class="w-4 h-4"></i></div><span class="font-medium text-gray-700">Partidos de Rayados</span></li>
+                    <li class="flex items-center gap-3 bg-white/50 p-3 rounded-xl border border-white"><div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-700 shrink-0"><i data-lucide="users" class="w-4 h-4"></i></div><span class="font-medium text-gray-700">Experiencia Estadio (Tour)</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-banorte" class="fixed inset-0 z-[60] hidden flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="closeModal('modal-banorte')"></div>
+        <div class="glass-panel w-full max-w-2xl max-h-[85vh] rounded-3xl relative flex flex-col overflow-hidden shadow-2xl animate-modal-in">
+            <div class="h-48 w-full relative shrink-0">
+                <img src="https://distritotec.tec.mx/sites/g/files/vgjovo1626/files/inline-images/dtec-cbd-07_52565656227_o_0.jpg" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6"><h2 class="text-3xl text-white font-extrabold drop-shadow-md">Estadio Banorte</h2></div>
+                <button onclick="closeModal('modal-banorte')" class="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur p-2 rounded-full text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scroll bg-white/80 backdrop-blur-xl flex-1">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+                    <a href="https://tec.mx/es" target="_blank" class="flex items-center justify-center gap-2 bg-white border border-gray-200 p-3 rounded-xl font-bold text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors shadow-sm"><i data-lucide="globe" class="w-4 h-4 text-airbnb"></i> Web del Tec</a>
+                    <a href="https://www.google.com/maps/search/?api=1&query=Estadio+Banorte+Monterrey" target="_blank" class="flex items-center justify-center gap-2 bg-green-50 border border-green-100 p-3 rounded-xl font-bold text-sm text-green-700 hover:bg-green-100 transition-colors shadow-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ver Ruta</a>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="activity" class="w-5 h-5 text-airbnb"></i> Actividades</h3>
+                <ul class="space-y-3">
+                    <li class="flex items-center gap-3 bg-white/50 p-3 rounded-xl border border-white"><div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 shrink-0"><i data-lucide="award" class="w-4 h-4"></i></div><span class="font-medium text-gray-700">Juegos de Borregos</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-barrio" class="fixed inset-0 z-[60] hidden flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="closeModal('modal-barrio')"></div>
+        <div class="glass-panel w-full max-w-2xl max-h-[85vh] rounded-3xl relative flex flex-col overflow-hidden shadow-2xl animate-modal-in">
+            <div class="h-48 w-full relative shrink-0">
+                <img src="https://www.mexicodesconocido.com.mx/wp-content/uploads/2023/01/DSC_9633-700x541-1.jpeg" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6"><h2 class="text-3xl text-white font-extrabold drop-shadow-md">Barrio Antiguo</h2></div>
+                <button onclick="closeModal('modal-barrio')" class="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur p-2 rounded-full text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scroll bg-white/80 backdrop-blur-xl flex-1">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+                     <a href="https://feverup.com/es/monterrey/venue/barrio-antiguo?srsltid=AfmBOoqISzAPS63uvWrh79PAh7YQ-KFz1DK9yiNL1SOPU3yOEi-2QYnW" target="_blank" class="flex items-center justify-center gap-2 bg-white border border-gray-200 p-3 rounded-xl font-bold text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors shadow-sm"><i data-lucide="calendar" class="w-4 h-4 text-airbnb"></i> Ver Eventos</a>
+                    <a href="https://www.google.com/maps/search/?api=1&query=Barrio+Antiguo+Monterrey" target="_blank" class="flex items-center justify-center gap-2 bg-green-50 border border-green-100 p-3 rounded-xl font-bold text-sm text-green-700 hover:bg-green-100 transition-colors shadow-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ver Ruta</a>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="coffee" class="w-5 h-5 text-airbnb"></i> Imperdibles</h3>
+                <ul class="space-y-3">
+                    <li class="flex items-center gap-3 bg-white/50 p-3 rounded-xl border border-white"><div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-700 shrink-0"><i data-lucide="music" class="w-4 h-4"></i></div><span class="font-medium text-gray-700">Vida Nocturna & Bares</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-lucia" class="fixed inset-0 z-[60] hidden flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="closeModal('modal-lucia')"></div>
+        <div class="glass-panel w-full max-w-2xl max-h-[85vh] rounded-3xl relative flex flex-col overflow-hidden shadow-2xl animate-modal-in">
+            <div class="h-48 w-full relative shrink-0">
+                <img src="https://www.turimexico.com/wp-content/uploads/2015/06/paseo-santa-lucia.jpg" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6"><h2 class="text-3xl text-white font-extrabold drop-shadow-md">Paseo Santa Lucía</h2></div>
+                <button onclick="closeModal('modal-lucia')" class="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur p-2 rounded-full text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scroll bg-white/80 backdrop-blur-xl flex-1">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+                    <a href="https://parquefundidora.org/experiencias/paseo-santa-lucia/" target="_blank" class="flex items-center justify-center gap-2 bg-white border border-gray-200 p-3 rounded-xl font-bold text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors shadow-sm"><i data-lucide="info" class="w-4 h-4 text-airbnb"></i> Info Oficial</a>
+                    <a href="https://www.google.com/maps/search/?api=1&query=Paseo+Santa+Lucia+Monterrey" target="_blank" class="flex items-center justify-center gap-2 bg-green-50 border border-green-100 p-3 rounded-xl font-bold text-sm text-green-700 hover:bg-green-100 transition-colors shadow-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ver Ruta</a>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="compass" class="w-5 h-5 text-airbnb"></i> Experiencias</h3>
+                <ul class="space-y-3">
+                    <li class="flex items-center gap-3 bg-white/50 p-3 rounded-xl border border-white"><div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 shrink-0"><i data-lucide="ship" class="w-4 h-4"></i></div><span class="font-medium text-gray-700">Recorrido en Bote ($)</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-fundidora" class="fixed inset-0 z-[60] hidden flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="closeModal('modal-fundidora')"></div>
+        <div class="glass-panel w-full max-w-2xl max-h-[85vh] rounded-3xl relative flex flex-col overflow-hidden shadow-2xl animate-modal-in">
+            <div class="h-48 w-full relative shrink-0">
+                <img src="https://i.elhorizonte.mx/img/eh/2890000/2892356_fundidoraok2.jpg" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6"><h2 class="text-3xl text-white font-extrabold drop-shadow-md">Parque Fundidora</h2></div>
+                <button onclick="closeModal('modal-fundidora')" class="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur p-2 rounded-full text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scroll bg-white/80 backdrop-blur-xl flex-1">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+                    <a href="https://www.parquefundidora.org/Info" target="_blank" class="flex items-center justify-center gap-2 bg-white border border-gray-200 p-3 rounded-xl font-bold text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors shadow-sm"><i data-lucide="globe" class="w-4 h-4 text-airbnb"></i> Sitio Web</a>
+                    <a href="https://www.google.com/maps/search/?api=1&query=Parque+Fundidora+Monterrey" target="_blank" class="flex items-center justify-center gap-2 bg-green-50 border border-green-100 p-3 rounded-xl font-bold text-sm text-green-700 hover:bg-green-100 transition-colors shadow-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ver Ruta</a>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="bike" class="w-5 h-5 text-airbnb"></i> Actividades</h3>
+                        <ul class="space-y-3">
+                            <li class="flex items-center gap-3 bg-white/50 p-3 rounded-xl border border-white"><div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-700 shrink-0"><i data-lucide="bike" class="w-4 h-4"></i></div><span class="font-medium text-gray-700">Renta de Bicicletas</span></li>
+                            <li class="flex items-center gap-3 bg-white/50 p-3 rounded-xl border border-white"><div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 shrink-0"><i data-lucide="landmark" class="w-4 h-4"></i></div><span class="font-medium text-gray-700">Museo Horno 3</span></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="map-pin" class="w-5 h-5 text-airbnb"></i> Puntos de Interés</h3>
+                        <div class="bg-white/50 p-4 rounded-2xl border border-white shadow-sm">
+                            <ul class="space-y-4">
+                                <li class="flex items-center gap-3 text-gray-700">
+                                    <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 shrink-0"><i data-lucide="building-2" class="w-5 h-5"></i></div>
+                                    <div><span class="font-bold block text-gray-800">Cintermex</span><span class="text-xs text-gray-500">Centro de Convenciones</span></div>
+                                </li>
+                                <li class="flex items-center gap-3 text-gray-700 border-t border-gray-200/50 pt-3">
+                                    <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 shrink-0"><i data-lucide="mic-2" class="w-5 h-5"></i></div>
+                                    <div><span class="font-bold block text-gray-800">Auditorio Citibanamex</span><span class="text-xs text-gray-500">Conciertos y Espectáculos</span></div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-espana" class="fixed inset-0 z-[60] hidden flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="closeModal('modal-espana')"></div>
+        <div class="glass-panel w-full max-w-2xl max-h-[85vh] rounded-3xl relative flex flex-col overflow-hidden shadow-2xl animate-modal-in">
+            <div class="h-48 w-full relative shrink-0">
+                <img src="https://iphonegr.elnorte.com/libre/online07/imagetransformer2/ImageTransformer.aspx?img=https://img.gruporeforma.com/imagenes/960x640/6/546/5545370.jpg&imagencompleta=1" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6"><h2 class="text-3xl text-white font-extrabold drop-shadow-md">Parque España</h2></div>
+                <button onclick="closeModal('modal-espana')" class="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur p-2 rounded-full text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scroll bg-white/80 backdrop-blur-xl flex-1">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+                    <a href="https://nuevoleon.travel/parque-espana" target="_blank" class="flex items-center justify-center gap-2 bg-white border border-gray-200 p-3 rounded-xl font-bold text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors shadow-sm"><i data-lucide="globe" class="w-4 h-4 text-airbnb"></i> Info en Web</a>
+                    <a href="https://www.google.com/maps/search/?api=1&query=Parque+España+Monterrey" target="_blank" class="flex items-center justify-center gap-2 bg-green-50 border border-green-100 p-3 rounded-xl font-bold text-sm text-green-700 hover:bg-green-100 transition-colors shadow-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ver Ruta</a>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="sun" class="w-5 h-5 text-airbnb"></i> Lo mejor</h3>
+                <ul class="space-y-3">
+                    <li class="flex items-center gap-3 bg-white/50 p-3 rounded-xl border border-white"><div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-700 shrink-0"><i data-lucide="tree-pine" class="w-4 h-4"></i></div><span class="font-medium text-gray-700">Puente Verde (Vistas)</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-riosilla" class="fixed inset-0 z-[60] hidden flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="closeModal('modal-riosilla')"></div>
+        <div class="glass-panel w-full max-w-2xl max-h-[85vh] rounded-3xl relative flex flex-col overflow-hidden shadow-2xl animate-modal-in">
+            <div class="h-48 w-full relative shrink-0">
+                <img src="https://www.nomada.news/wp-content/uploads/2019/11/rio-la-silla-monterrey-guadalupe.jpg" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6"><h2 class="text-3xl text-white font-extrabold drop-shadow-md">Río La Silla</h2></div>
+                <button onclick="closeModal('modal-riosilla')" class="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur p-2 rounded-full text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scroll bg-white/80 backdrop-blur-xl flex-1">
+                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+                    <a href="https://www.nuevoleon.travel/parque-ecologico-la-silla" target="_blank" class="flex items-center justify-center gap-2 bg-white border border-gray-200 p-3 rounded-xl font-bold text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors shadow-sm"><i data-lucide="globe" class="w-4 h-4 text-airbnb"></i> Info en Web</a>
+                    <a href="https://www.google.com/maps/search/?api=1&query=Gran+Parque+Rio+La+Silla" target="_blank" class="flex items-center justify-center gap-2 bg-green-50 border border-green-100 p-3 rounded-xl font-bold text-sm text-green-700 hover:bg-green-100 transition-colors shadow-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ver Ruta</a>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="leaf" class="w-5 h-5 text-airbnb"></i> Naturaleza</h3>
+                <ul class="space-y-3">
+                    <li class="flex items-center gap-3 bg-white/50 p-3 rounded-xl border border-white"><div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-700 shrink-0"><i data-lucide="footprints" class="w-4 h-4"></i></div><span class="font-medium text-gray-700">Senderismo ligero</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-pastora" class="fixed inset-0 z-[60] hidden flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="closeModal('modal-pastora')"></div>
+        <div class="glass-panel w-full max-w-2xl max-h-[85vh] rounded-3xl relative flex flex-col overflow-hidden shadow-2xl animate-modal-in">
+            <div class="h-48 w-full relative shrink-0">
+                <img src="https://ladesa.com/wp-content/uploads/2022/11/lpl08.jpg" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6"><h2 class="text-3xl text-white font-extrabold drop-shadow-md">La Pastora</h2></div>
+                <button onclick="closeModal('modal-pastora')" class="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur p-2 rounded-full text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scroll bg-white/80 backdrop-blur-xl flex-1">
+                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+                    <a href="https://www.parquelapastora.org" target="_blank" class="flex items-center justify-center gap-2 bg-white border border-gray-200 p-3 rounded-xl font-bold text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors shadow-sm"><i data-lucide="globe" class="w-4 h-4 text-airbnb"></i> Horarios y Precios</a>
+                    <a href="https://www.google.com/maps/search/?api=1&query=Parque+La+Pastora+Monterrey" target="_blank" class="flex items-center justify-center gap-2 bg-green-50 border border-green-100 p-3 rounded-xl font-bold text-sm text-green-700 hover:bg-green-100 transition-colors shadow-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ver Ruta</a>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="paw-print" class="w-5 h-5 text-airbnb"></i> Atracciones</h3>
+                <ul class="space-y-3">
+                    <li class="flex items-center gap-3 bg-white/50 p-3 rounded-xl border border-white"><div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-700 shrink-0"><i data-lucide="cat" class="w-4 h-4"></i></div><span class="font-medium text-gray-700">Zoológico</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-central" class="fixed inset-0 z-[60] hidden flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="closeModal('modal-central')"></div>
+        <div class="glass-panel w-full max-w-2xl max-h-[85vh] rounded-3xl relative flex flex-col overflow-hidden shadow-2xl animate-modal-in">
+            <div class="h-48 w-full relative shrink-0">
+                <img src="https://www.rdlparquitectos.com/media/1838/_tab3573.jpg" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6"><h2 class="text-3xl text-white font-extrabold drop-shadow-md">Central de Autobuses</h2></div>
+                <button onclick="closeModal('modal-central')" class="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur p-2 rounded-full text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scroll bg-white/80 backdrop-blur-xl flex-1">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+                    <a href="https://www.google.com/search?q=Central+de+Autobuses+Monterrey+Boletos" target="_blank" class="flex items-center justify-center gap-2 bg-white border border-gray-200 p-3 rounded-xl font-bold text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors shadow-sm"><i data-lucide="search" class="w-4 h-4 text-airbnb"></i> Buscar Boletos</a>
+                    <a href="https://www.google.com/maps/dir/Siderúrgica+108/CENTRAL+DE+AUTOBUSES,+MONTERREY,NL.,+Avenida+Cristóbal+Colón,+Centro,+Monterrey,+Nuevo+León/@25.6864343,-100.3184137,15z/data=!4m14!4m13!1m5!1m1!1s0x8662bfe5aec0b3f1:0x4fbf285c0b992017!2m2!1d-100.2744458!2d25.6686299!1m5!1m1!1s0x86629551bc2db5a9:0xf7366d48f2d88253!2m2!1d-100.3197891!2d25.6868329!3e0?entry=ttu&g_ep=EgoyMDI1MTExNy4wIKXMDSoASAFQAw%3D%3D" target="_blank" class="flex items-center justify-center gap-2 bg-green-50 border border-green-100 p-3 rounded-xl font-bold text-sm text-green-700 hover:bg-green-100 transition-colors shadow-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ver Ubicación</a>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="bus" class="w-5 h-5 text-airbnb"></i> Líneas Principales</h3>
+                <ul class="space-y-3">
+                    <li class="flex items-center gap-3 bg-white/50 p-3 rounded-xl border border-white"><div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center text-red-600 shrink-0"><i data-lucide="bus-front" class="w-4 h-4"></i></div><span class="font-medium text-gray-700">Grupo Senda / Transpaís</span></li>
+                    <li class="flex items-center gap-3 bg-white/50 p-3 rounded-xl border border-white"><div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 shrink-0"><i data-lucide="bus" class="w-4 h-4"></i></div><span class="font-medium text-gray-700">Greyhound / ETN / Futura</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-aeropuerto" class="fixed inset-0 z-[60] hidden flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="closeModal('modal-aeropuerto')"></div>
+        <div class="glass-panel w-full max-w-2xl max-h-[85vh] rounded-3xl relative flex flex-col overflow-hidden shadow-2xl animate-modal-in">
+            <div class="h-48 w-full relative shrink-0">
+                <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=1600&auto=format&fit=crop" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6"><h2 class="text-3xl text-white font-extrabold drop-shadow-md">Ruta Express Aeropuerto</h2></div>
+                <button onclick="closeModal('modal-aeropuerto')" class="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur p-2 rounded-full text-white transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scroll bg-white/80 backdrop-blur-xl flex-1">
+                <p class="text-gray-600 mb-6 leading-relaxed">Servicio de transporte público de bajo costo que conecta la estación del Metro "Y Griega" con el Aeropuerto Internacional de Monterrey.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+                    <a href="https://historico.nl.gob.mx/campanas/conoce-la-ruta-express-aeropuerto-y-griega" target="_blank" class="flex items-center justify-center gap-2 bg-white border border-gray-200 p-3 rounded-xl font-bold text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors shadow-sm"><i data-lucide="globe" class="w-4 h-4 text-airbnb"></i> Sitio Web</a>
+                    <a href="https://www.google.com/maps/dir/?api=1&origin=Calle+Siderurgica+108+Buenos+Aires+Monterrey&destination=Estacion+Y+Griega+Monterrey" target="_blank" class="flex items-center justify-center gap-2 bg-green-50 border border-green-100 p-3 rounded-xl font-bold text-sm text-green-700 hover:bg-green-100 transition-colors shadow-sm"><i data-lucide="map-pin" class="w-4 h-4"></i> Ruta a Estación Y Griega</a>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><i data-lucide="info" class="w-5 h-5 text-airbnb"></i> Información Clave</h3>
+                <ul class="space-y-3">
+                    <li class="flex items-center gap-3 bg-white/50 p-3 rounded-xl border border-white"><div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 shrink-0"><i data-lucide="dollar-sign" class="w-4 h-4"></i></div><span class="font-medium text-gray-700">Costo: $15 MXN (Pago exacto)</span></li>
+                    <li class="flex items-center gap-3 bg-white/50 p-3 rounded-xl border border-white"><div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 shrink-0"><i data-lucide="clock" class="w-4 h-4"></i></div><span class="font-medium text-gray-700">Horario: 04:00 AM - 11:00 PM</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            if (modal) {
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            if (modal) {
+                modal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        }
+
+        function filterContent(category, element) {
+            document.querySelectorAll('.category-pill').forEach(pill => {
+                pill.classList.remove('active');
+                pill.classList.add('text-gray-500', 'hover:text-airbnb');
+            });
+            
+            element.classList.add('active');
+            element.classList.remove('text-gray-500', 'hover:text-airbnb');
+
+            const allCards = document.querySelectorAll('.listing-card-container');
+            
+            allCards.forEach(card => {
+                card.classList.remove('show-card');
+                card.classList.add('hidden-card');
+                
+                setTimeout(() => {
+                    if(card.dataset.category === category) {
+                        card.classList.remove('hidden-card');
+                        card.classList.add('show-card');
+                    }
+                }, 50);
+            });
+        }
+
+        const cards = document.querySelectorAll('.listing-card');
+        cards.forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const xRotation = -((y - rect.height / 2) / 25);
+                const yRotation = (x - rect.width / 2) / 25;
+                card.style.transform = `perspective(1000px) rotateX(${xRotation}deg) rotateY(${yRotation}deg) scale(1.02)`;
+            });
+
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
+            });
+        });
+    </script>
+</body>
+</html>
